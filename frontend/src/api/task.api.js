@@ -39,3 +39,13 @@ export const updateTask = async (id, task) => {
     }
   };
 
+  export const toggleTask = async (id, isCompleted) => {
+    try {
+      const res = await axios.patch(`/task/${id}/toggle`, { isCompleted });
+      return res.data;
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      throw error;
+    }
+  };
+

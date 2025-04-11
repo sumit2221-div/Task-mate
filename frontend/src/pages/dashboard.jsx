@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTasks, deleteTask, updateTask } from '../api/task.api.js';
+import { getTasks, deleteTask, updateTask, toggleTask } from '../api/task.api.js';
 import { useNavigate } from 'react-router-dom';
 import UpdateTaskForm from './UpdateTaskForm.jsx';
 import { ToastContainer, toast } from 'react-toastify';
@@ -24,6 +24,7 @@ const Dashboard = () => {
         const data = await getTasks(params);
         setTasks(data.tasks);
         setFilteredTasks(data.tasks);
+        console.log('Fetched tasks:', data.tasks);
       } catch (error) {
         console.error('Error fetching tasks:', error);
         toast.error('Failed to fetch tasks. Please try again.');
@@ -79,6 +80,18 @@ const Dashboard = () => {
     toast.info('Task update canceled.');
   };
 
+  const handleToggle = async (id, currentStatus) => {
+    try {
+      const updatedTask = await toggleTask(id, !currentStatus);
+      setTasks(tasks.map((task) => (task._id === id ? updatedTask : task)));
+      setFilteredTasks(filteredTasks.map((task) => (task._id === id ? updatedTask : task)));
+      toast.success('Task status updated successfully!');
+    } catch (error) {
+      console.error('Error toggling task status:', error);
+      toast.error('Failed to update task status. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-8">
@@ -122,12 +135,17 @@ const Dashboard = () => {
                 >
                   <h2 className="text-lg font-semibold text-gray-800">{task.title}</h2>
                   <p className="text-sm text-gray-600 mt-2">{task.description}</p>
+                  <h3>{task.category}</h3>
                   <div className="mt-4 flex justify-between items-center">
                     <p className="text-sm text-gray-500">
                       📅 Due: {new Date(task.dueDate).toLocaleDateString()}
                     </p>
-                    <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-600 rounded-full">
-                      {task.category}
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full ${
+                        task.completed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      }`}
+                    >
+                      {task.completed ? 'Completed' : 'Incomplete'}
                     </span>
                   </div>
                   <div className="mt-4 flex gap-3">
@@ -141,7 +159,15 @@ const Dashboard = () => {
                       onClick={() => handleDelete(task._id)}
                       className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600"
                     >
-                     Delete
+                       Delete
+                    </button>
+                    <button
+                      onClick={() => handleToggle(task._id, task.completed)}
+                      className={`px-4 py-2 text-sm rounded-lg ${
+                        task.completed ? 'bg-gray-500 text-white' : 'bg-blue-500 text-white'
+                      } hover:bg-blue-600`}
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
                     </button>
                   </div>
                 </div>
@@ -152,8 +178,6 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-      {/* Update Task Modal */}
       {isEditing && currentTask && (
         <UpdateTaskForm
           currentTask={currentTask}
@@ -162,8 +186,6 @@ const Dashboard = () => {
           handleCancel={handleCancel}
         />
       )}
-
-      {/* Toast Notifications */}
       <ToastContainer />
     </div>
   );
